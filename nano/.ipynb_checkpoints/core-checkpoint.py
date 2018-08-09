@@ -3,70 +3,38 @@
 
 # In[18]:
 
+import pylab as py
+import lmfit  #https://lmfit.github.io/lmfit-py/model.html
+import numpy as np
 
-get_ipython().run_line_magic('pylab', 'inline')
-from lmfit import Model
 
-k0=1 # Rate Constant | cm/s
-D=1e-6 # Diffusion Coefficient | cm2/s
-E=0.1 # applied potential | V
-E0=0.4 # formal potential | V
-alpha=0.5  # Charge transfer coefficient
-F=96485  # Faraday Constant | C/mol
-R=8.314 #Gas Constant | J/mol*K
-T=293 #Temperature | K
-f=F/(R*T)
-n=1  # number of electrons per reaction 
-rtip=25e-7 # Tip radius | cm
-z=np.linspace(0.2,10,49) # Dimensionless Distance 
 
-def approach(L, E, E0, D=1e-6, rtip=25e-7, k0=1, n=1, alpha=0.5, T=293):
+def approach(L, E, E0, D, k0, rtip=25e-7, n=1, alpha=0.5, T=293):
     F=96485  # Faraday Constant | C/mol
     R=8.314 #Gas Constant | J/mol*K
     f=F/(R*T)
+    n= int(n)
     
     # effective mass transfer coefficient
-    m0=(4*D*(0.68+0.78377/L+0.315*exp(-1.0672/L)))/(pi*rtip)
+    m0=(4*D*(0.68+0.78377/L+0.315*py.exp(-1.0672/L)))/(py.pi*rtip)
     
     # rate constant
-    k=k0*exp(-alpha*n*f*(E-E0))/m0
+    k=k0*py.exp(-alpha*n*f*(E-E0))/m0
     
     # Dimensionless Current
-    Ip=(0.68+0.78377/L+0.315*exp(-1.0672/L))/(1+exp(n*f*(E-E0))+1/k)
+    Ip=(0.68+0.78377/L+0.315*py.exp(-1.0672/L))/(1+py.exp(n*f*(E-E0))+1/k)
     
-    In=1/(0.292+1.515/L+0.6553*exp(-2.4035/L))
-    
-    plot(L,Ip)
-    xlabel('L')
-    ylabel('$i_T$(L)/$i_T,_\infty$')
-    text(7,0.4,'$k_0$=%1.0e cm/s'%k0)
-    text(7,0.3,'D=%1.0e cm$^2$/s'%D)
-    text(7,0.2,'$E$=%1.2f V'%E)
-    show()
+    In=1/(0.292+1.515/L+0.6553*py.exp(-2.4035/L))
     return Ip
-y=approach(L,E,E0)
 
-def approach_fit(y):
-    fmodel=Model(approach)
-    # initial values
-    params = fmodel.make_params(E=0, E0=0, D=1e-6, rtip=25e-7, k0=1, n=1, alpha=0.5, T=293)
-    # fix parameters:
-    params['T'].vary = False
-    params['alpha'].vary = False
-    params['rtip'].vary = False
-    params['E0'].vary = False
-    params['E'].vary = False
-    
-    # fit parameters to data with various *static* values of b:
-#    for b in range(10):
-#        params['T'].value = 293
-#        params['alpha'].value = 0.5
-#        params['rtip'].value = 25e-7
-#        params['E0'].value = 0
-#        params['E'].value = 0.4
-        
-    result = fmodel.fit(i, params, x=L)
+def approach_plot(x,y, E=0.4, E0=0, D=10e-6, k0=1, rtip=25e-7, n=1, alpha=0.5, T=293):
+    py.plot(x,y)
+    py.xlabel('L')
+    py.ylabel('$i_T$(L)/$i_T,_\infty$')
+    py.text(0.7*np.max(x),(np.max(y)-np.min(y))*0.9+np.min(y),'$k_0$=%1.0e cm/s'%k0)
+    py.text(0.7*np.max(x),(np.max(y)-np.min(y))*0.8+np.min(y),'D=%1.0e cm$^2$/s'%D)
+    py.text(0.7*np.max(x),(np.max(y)-np.min(y))*0.7+np.min(y),'$E$=%1.2f V'%E)
+    py.show()
 
-t=approach_fit(y)
-print(t)
+
 
